@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admina - Klucze</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Resetowanie marginesów i paddingu */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Tło strony */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Panel loginowy i admina */
+        #loginForm, #adminPanel {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 450px;
+            margin: 10px;
+        }
+
+        h2, h3 {
+            text-align: center;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* Formularz logowania */
+        #loginForm input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #loginForm input:focus {
+            border-color: #007bff;
+        }
+
+        /* Przycisk logowania */
+        #loginForm button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #loginForm button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Panel Admina */
+        #adminPanel button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background-color: #dc3545;
+            color: white;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        #adminPanel button:hover {
+            background-color: #c82333;
+        }
+
+        /* Tabela historii kluczy */
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        /* Wprowadzenie filtrów */
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .filters input {
+            width: 48%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+    </style>
+    <script>
+        let username = '';
+        let role = '';
+        let fullHistory = [];
+
+        async function login() {
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: login, password })
+            });
+
+            const data = await res.json();
+            if (data.success && data.role === "admin") {
+                username = data.username;
+                role = data.role;
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                fetchHistory();
+            } else {
+                alert('Błąd logowania lub brak uprawnień.');
+            }
+        }
+
+        function logout() {
+            username = '';
+            role = '';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('login').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        async function fetchHistory() {
+            const res = await fetch('/api/keys/history');
+            const data = await res.json();
+            if (data.success) {
+                fullHistory = data.history;
+                renderHistory(fullHistory);
+            }
+        }
+
+        function renderHistory(history) {
+            const table = document.getElementById('historyTable');
+            table.innerHTML = '<tr><th>Klucz</th><th>Użytkownik</th><th>Akcja</th><th>Data</th></tr>';
+            history.forEach(item => {
+                table.innerHTML += `<tr>
+          <td>${item.keyName}</td>
+          <td>${item.username}</td>
+          <td>${item.action}</td>
+          <td>${new Date(item.timestamp).toLocaleString()}</td>
+        </tr>`;
+            });
+        }
+
+        function filterHistory() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const userFilter = document.getElementById('userFilter').value.toLowerCase();
+            const filtered = fullHistory.filter(item => {
+                const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+                const matchesDate = !dateFilter || itemDate === dateFilter;
+                const matchesUser = !userFilter || item.username.toLowerCase().includes(userFilter);
+                return matchesDate && matchesUser;
+            });
+            renderHistory(filtered);
+        }
+
+        async function assignKey() {
+            const keyId = document.getElementById('keyAssign').value;
+            const targetUser = document.getElementById('userAssign').value;
+
+            const res = await fetch('/api/keys/assign', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ keyId, username: targetUser })
+            });
+            const data = await res.json();
+            alert(data.message);
+            fetchHistory();
+        }
+
+        async function returnKey() {
+            const keyId = document.getElementById('keyReturn').value;
+            const res = await fetch('/api/keys/return', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ keyId, username })
+            });
+            const data = await res.json();
+            alert(data.message);
+            fetchHistory();
+        }
+    </script>
+</head>
+<body>
+
+<div id="loginForm">
+    <h2>🔐 Panel logowania</h2>
+    <input id="login" placeholder="Login" type="text" />
+    <input id="password" placeholder="Hasło" type="password" />
+    <button onclick="login()">Zaloguj się</button>
+</div>
+
+<div id="adminPanel" style="display:none">
+    <button onclick="logout()">Wyloguj się</button>
+    <h3>📜 Historia kluczy</h3>
+
+    <div class="filters">
+        <input type="date" id="dateFilter" onchange="filterHistory()" />
+        <input type="text" id="userFilter" placeholder="Wprowadź użytkownika" onkeyup="filterHistory()" />
+    </div>
+
+    <table id="historyTable"></table>
+
+    <h3>🔑 Przypisz klucz</h3>
+    <input id="keyAssign" placeholder="ID klucza" />
+    <input id="userAssign" placeholder="Login użytkownika" />
+    <button onclick="assignKey()">Przypisz</button>
+
+    <h3>🔁 Zwrot klucza</h3>
+    <input id="keyReturn" placeholder="ID klucza do zwrotu" />
+    <button onclick="returnKey()">Zwróć</button>
+</div>
+
+</body>
+</html>
