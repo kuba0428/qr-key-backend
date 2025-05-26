@@ -174,6 +174,26 @@ app.post("/api/keys/add", (req, res) => {
         });
     });
 });
+async function addKey() {
+    const keyId = document.getElementById('newKeyId').value;
+    const keyName = document.getElementById('newKeyName').value;
+
+    if (!keyId || !keyName) {
+        alert("Wprowadź ID i nazwę klucza.");
+        return;
+    }
+
+    const res = await fetch('/api/keys/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyId, keyName })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    fetchHistory(); // odśwież historię
+}
 
 
 const PORT = process.env.PORT || 5001;
