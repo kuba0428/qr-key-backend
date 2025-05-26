@@ -83,17 +83,26 @@ app.post("/api/keys/assign", (req, res) => {
         }
 
         const userId = results[0].id;
-        const assignKeyQuery = "UPDATE keys_door SET assignedTo = ? WHERE keyId = ?";
+        // Najpierw sprawdź, czy klucz istnieje
+        const checkKeyQuery = "SELECT * FROM keys_door WHERE keyId = ?";
+        db.query(checkKeyQuery, [keyId], (err, keyResults) => {
+            if (err) return res.status(500).json({ success: false, message: "Błąd sprawdzania klucza" });
+            if (keyResults.length === 0) return res.status(404).json({ success: false, message: "Nie znaleziono takiego klucza!" });
 
-        db.query(assignKeyQuery, [userId, keyId], (err) => {
-            if (err) return res.status(500).json({ success: false, message: "Błąd przypisania klucza" });
+            // Klucz istnieje, przypisz go
+            const assignKeyQuery = "UPDATE keys_door SET assignedTo = ? WHERE keyId = ?";
+            db.query(assignKeyQuery, [userId, keyId], (err) => {
+                if (err) return res.status(500).json({ success: false, message: "Błąd przypisania klucza" });
 
-            const insertHistoryQuery = "INSERT INTO keys_history (userId, keyId, action) VALUES (?, ?, 'Pobrano')";
-            db.query(insertHistoryQuery, [userId, keyId], (err) => {
-                if (err) console.error("Błąd zapisu historii:", err);
+                const insertHistoryQuery = "INSERT INTO keys_history (userId, keyId, action) VALUES (?, ?, 'Pobrano')";
+                db.query(insertHistoryQuery, [userId, keyId], (err) => {
+                    if (err) console.error("Błąd zapisu historii:", err);
+                });
+
+                res.json({ success: true, message: "Klucz przypisany!" });
             });
-            res.json({ success: true, message: "Klucz przypisany!" });
         });
+
     });
 });
 
