@@ -151,6 +151,29 @@ app.get("/api/keys/history", (req, res) => {
         res.json({ success: true, history: historyResults });
     });
 });
+app.post("/api/keys/add", (req, res) => {
+    const { keyId, keyName } = req.body;
+
+    if (!keyId || !keyName) {
+        return res.status(400).json({ success: false, message: "Podaj ID i nazwę klucza." });
+    }
+
+    // Sprawdź, czy klucz już istnieje
+    const checkQuery = "SELECT * FROM keys_door WHERE keyId = ?";
+    db.query(checkQuery, [keyId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: "Błąd zapytania." });
+        if (results.length > 0) {
+            return res.json({ success: false, message: "Klucz o takim ID już istnieje." });
+        }
+
+        // Dodaj klucz
+        const insertQuery = "INSERT INTO keys_door (keyId, keyName) VALUES (?, ?)";
+        db.query(insertQuery, [keyId, keyName], (err) => {
+            if (err) return res.status(500).json({ success: false, message: "Błąd dodawania klucza." });
+            res.json({ success: true, message: "Klucz dodany pomyślnie!" });
+        });
+    });
+});
 
 
 const PORT = process.env.PORT || 5001;
