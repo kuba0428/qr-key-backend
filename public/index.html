@@ -133,9 +133,17 @@
 
     </style>
     <script>
-        let username = '';
-        let role = '';
+        let username = localStorage.getItem('username') || '';
+        let role = localStorage.getItem('role') || '';
         let fullHistory = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (username && role === 'admin') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                fetchHistory();
+            }
+        });
 
         async function login() {
             const login = document.getElementById('login').value;
@@ -143,7 +151,7 @@
 
             const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: login, password })
             });
 
@@ -151,6 +159,11 @@
             if (data.success && data.role === "admin") {
                 username = data.username;
                 role = data.role;
+
+                // ✅ Zapisz do localStorage
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', role);
+
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
                 fetchHistory();
@@ -162,6 +175,11 @@
         function logout() {
             username = '';
             role = '';
+
+            // ❌ Wyczyść localStorage
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+
             document.getElementById('loginForm').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('login').value = '';
@@ -182,11 +200,11 @@
             table.innerHTML = '<tr><th>Klucz</th><th>Użytkownik</th><th>Akcja</th><th>Data</th></tr>';
             history.forEach(item => {
                 table.innerHTML += `<tr>
-          <td>${item.keyName}</td>
-          <td>${item.username}</td>
-          <td>${item.action}</td>
-          <td>${new Date(item.timestamp).toLocaleString()}</td>
-        </tr>`;
+                <td>${item.keyName}</td>
+                <td>${item.username}</td>
+                <td>${item.action}</td>
+                <td>${new Date(item.timestamp).toLocaleString()}</td>
+            </tr>`;
             });
         }
 
@@ -208,7 +226,7 @@
 
             const res = await fetch('/api/keys/assign', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keyId, username: targetUser })
             });
             const data = await res.json();
@@ -220,7 +238,7 @@
             const keyId = document.getElementById('keyReturn').value;
             const res = await fetch('/api/keys/return', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keyId, username })
             });
             const data = await res.json();
@@ -228,6 +246,7 @@
             fetchHistory();
         }
     </script>
+
 </head>
 <body>
 
