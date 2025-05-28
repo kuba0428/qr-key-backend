@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -68,14 +69,14 @@
         }
 
         #adminPanel {
-            display: flex;
+            display: none;
             flex-direction: column;
             height: 100vh;
             max-height: 100vh;
         }
 
-        #adminPanel.hidden {
-            display: none !important;
+        #adminPanel.active {
+            display: flex;
         }
 
         #adminContent {
@@ -150,7 +151,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             if (username && role === 'admin') {
                 document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.add('active');
                 fetchHistory();
             }
         });
@@ -172,7 +173,7 @@
                 localStorage.setItem('username', username);
                 localStorage.setItem('role', role);
                 document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('adminPanel').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.add('active');
                 fetchHistory();
             } else {
                 alert('Błąd logowania lub brak uprawnień.');
@@ -185,7 +186,7 @@
             localStorage.removeItem('username');
             localStorage.removeItem('role');
             document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('active');
             document.getElementById('login').value = '';
             document.getElementById('password').value = '';
         }
@@ -195,7 +196,7 @@
             const data = await res.json();
             if (data.success) {
                 fullHistory = data.history;
-                renderHistory(fullHistory);
+                filterHistory();
             }
         }
 
@@ -235,7 +236,7 @@
             });
             const data = await res.json();
             alert(data.message);
-            fetchHistory();
+            await fetchHistory();
         }
 
         async function returnKey() {
@@ -247,7 +248,7 @@
             });
             const data = await res.json();
             alert(data.message);
-            fetchHistory();
+            await fetchHistory();
         }
 
         async function addKey() {
@@ -267,7 +268,7 @@
 
             const data = await res.json();
             alert(data.message);
-            fetchHistory();
+            await fetchHistory();
         }
     </script>
 </head>
@@ -279,28 +280,26 @@
     <button onclick="login()">Zaloguj się</button>
 </div>
 
-<div id="adminPanel" class="hidden">
+<div id="adminPanel">
     <div id="adminContent">
+        <h3>Zarządzanie kluczami</h3>
+        <input id="keyAssign" placeholder="ID klucza" />
+        <input id="userAssign" placeholder="Login użytkownika" />
+        <button onclick="assignKey()">Przypisz klucz</button>
+
+        <input id="keyReturn" placeholder="ID klucza do zwrotu" />
+        <button onclick="returnKey()">Zwróć klucz</button>
+
+        <input id="newKeyId" placeholder="ID nowego klucza" />
+        <input id="newKeyName" placeholder="Nazwa nowego klucza" />
+        <button onclick="addKey()">Dodaj nowy klucz</button>
+
         <h3>Historia kluczy</h3>
         <div class="filters">
             <input type="date" id="dateFilter" onchange="filterHistory()" />
             <input type="text" id="userFilter" placeholder="Wprowadź użytkownika" onkeyup="filterHistory()" />
         </div>
         <table id="historyTable"></table>
-
-        <h3>Przypisz klucz</h3>
-        <input id="keyAssign" placeholder="ID klucza" />
-        <input id="userAssign" placeholder="Login użytkownika" />
-        <button onclick="assignKey()">Przypisz</button>
-
-        <h3>Zwrot klucza</h3>
-        <input id="keyReturn" placeholder="ID klucza do zwrotu" />
-        <button onclick="returnKey()">Zwróć</button>
-
-        <h3>Dodaj nowy klucz</h3>
-        <input id="newKeyId" placeholder="ID nowego klucza" />
-        <input id="newKeyName" placeholder="Nazwa nowego klucza" />
-        <button onclick="addKey()">Dodaj klucz</button>
     </div>
     <div id="adminFooter">
         <button onclick="logout()">Wyloguj się</button>
