@@ -1,5 +1,4 @@
 const path = require("path");
-
 require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2");
@@ -10,7 +9,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
-
 
 const db = mysql.createConnection({
     host: "mainline.proxy.rlwy.net",
@@ -27,7 +25,6 @@ db.connect(err => {
         console.log("Połączono z MySQL");
     }
 });
-
 
 app.post("/api/register", async (req, res) => {
     const { username, password, role = "user" } = req.body;
@@ -49,7 +46,6 @@ app.post("/api/register", async (req, res) => {
     });
 });
 
-
 app.post("/api/login", (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -69,7 +65,6 @@ app.post("/api/login", (req, res) => {
     });
 });
 
-
 app.post("/api/keys/assign", (req, res) => {
     const { keyId, username } = req.body;
     if (!keyId || !username) {
@@ -83,13 +78,17 @@ app.post("/api/keys/assign", (req, res) => {
         }
 
         const userId = results[0].id;
-        // Najpierw sprawdź, czy klucz istnieje
-        const checkKeyQuery = "SELECT * FROM keys_door WHERE keyId = ?";
-        db.query(checkKeyQuery, [keyId], (err, keyResults) => {
-            if (err) return res.status(500).json({ success: false, message: "Błąd sprawdzania klucza" });
-            if (keyResults.length === 0) return res.status(404).json({ success: false, message: "Nie znaleziono takiego klucza!" });
 
-            // Klucz istnieje, przypisz go
+        const checkKeyQuery = "SELECT assignedTo FROM keys_door WHERE keyId = ?";
+        db.query(checkKeyQuery, [keyId], (err, keyResults) => {
+            if (err || keyResults.length === 0) {
+                return res.status(400).json({ success: false, message: "Taki klucz nie istnieje." });
+            }
+
+            if (keyResults[0].assignedTo !== null) {
+                return res.json({ success: false, message: "Ten klucz jest już przypisany." });
+            }
+
             const assignKeyQuery = "UPDATE keys_door SET assignedTo = ? WHERE keyId = ?";
             db.query(assignKeyQuery, [userId, keyId], (err) => {
                 if (err) return res.status(500).json({ success: false, message: "Błąd przypisania klucza" });
@@ -98,14 +97,11 @@ app.post("/api/keys/assign", (req, res) => {
                 db.query(insertHistoryQuery, [userId, keyId], (err) => {
                     if (err) console.error("Błąd zapisu historii:", err);
                 });
-
                 res.json({ success: true, message: "Klucz przypisany!" });
             });
         });
-
     });
 });
-
 
 app.post("/api/keys/return", (req, res) => {
     const { keyId, username } = req.body;
@@ -120,23 +116,55 @@ app.post("/api/keys/return", (req, res) => {
         }
 
         const userId = results[0].id;
-        const returnKeyQuery = "UPDATE keys_door SET assignedTo = NULL WHERE keyId = ?";
 
-        db.query(returnKeyQuery, [keyId], (err, results) => {
-            if (err || results.affectedRows === 0) {
-                return res.json({ success: false, message: "Klucz nie jest przypisany!" });
+        const checkKeyQuery = "SELECT assignedTo FROM keys_door WHERE keyId = ?";
+        db.query(checkKeyQuery, [keyId], (err, keyResults) => {
+            if (err || keyResults.length === 0) {
+                return res.json({ success: false, message: "Taki klucz nie istnieje." });
             }
 
-            const insertHistoryQuery = "INSERT INTO keys_history (userId, keyId, action) VALUES (?, ?, 'Oddano')";
-            db.query(insertHistoryQuery, [userId, keyId], (err) => {
-                if (err) console.error("Błąd zapisu historii:", err);
-            });
+            if (keyResults[0].assignedTo === null) {
+                return res.json({ success: false, message: "Ten klucz nie jest przypisany." });
+            }
 
-            res.json({ success: true, message: "Klucz zwrócony!" });
+            const returnKeyQuery = "UPDATE keys_door SET assignedTo = NULL WHERE keyId = ?";
+            db.query(returnKeyQuery, [keyId], (err, results) => {
+                if (err || results.affectedRows === 0) {
+                    return res.json({ success: false, message: "Klucz nie mógł zostać zwrócony." });
+                }
+
+                const insertHistoryQuery = "INSERT INTO keys_history (userId, keyId, action) VALUES (?, ?, 'Oddano')";
+                db.query(insertHistoryQuery, [userId, keyId], (err) => {
+                    if (err) console.error("Błąd zapisu historii:", err);
+                });
+
+                res.json({ success: true, message: "Klucz zwrócony!" });
+            });
         });
     });
 });
 
+app.post("/api/keys/add", (req, res) => {
+    const { keyId, keyName } = req.body;
+
+    if (!keyId || !keyName) {
+        return res.status(400).json({ success: false, message: "Podaj ID i nazwę klucza." });
+    }
+
+    const checkQuery = "SELECT * FROM keys_door WHERE keyId = ?";
+    db.query(checkQuery, [keyId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: "Błąd zapytania." });
+        if (results.length > 0) {
+            return res.json({ success: false, message: "Klucz o takim ID już istnieje." });
+        }
+
+        const insertQuery = "INSERT INTO keys_door (keyId, keyName) VALUES (?, ?)";
+        db.query(insertQuery, [keyId, keyName], (err) => {
+            if (err) return res.status(500).json({ success: false, message: "Błąd dodawania klucza." });
+            res.json({ success: true, message: "Klucz dodany pomyślnie!" });
+        });
+    });
+});
 
 app.get("/api/keys/history", (req, res) => {
     const historyQuery = `
@@ -151,50 +179,6 @@ app.get("/api/keys/history", (req, res) => {
         res.json({ success: true, history: historyResults });
     });
 });
-app.post("/api/keys/add", (req, res) => {
-    const { keyId, keyName } = req.body;
-
-    if (!keyId || !keyName) {
-        return res.status(400).json({ success: false, message: "Podaj ID i nazwę klucza." });
-    }
-
-    // Sprawdź, czy klucz już istnieje
-    const checkQuery = "SELECT * FROM keys_door WHERE keyId = ?";
-    db.query(checkQuery, [keyId], (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Błąd zapytania." });
-        if (results.length > 0) {
-            return res.json({ success: false, message: "Klucz o takim ID już istnieje." });
-        }
-
-        // Dodaj klucz
-        const insertQuery = "INSERT INTO keys_door (keyId, keyName) VALUES (?, ?)";
-        db.query(insertQuery, [keyId, keyName], (err) => {
-            if (err) return res.status(500).json({ success: false, message: "Błąd dodawania klucza." });
-            res.json({ success: true, message: "Klucz dodany pomyślnie!" });
-        });
-    });
-});
-async function addKey() {
-    const keyId = document.getElementById('newKeyId').value;
-    const keyName = document.getElementById('newKeyName').value;
-
-    if (!keyId || !keyName) {
-        alert("Wprowadź ID i nazwę klucza.");
-        return;
-    }
-
-    const res = await fetch('/api/keys/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyId, keyName })
-    });
-
-    const data = await res.json();
-    alert(data.message);
-
-    fetchHistory(); // odśwież historię
-}
-
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, '0.0.0.0', () => console.log(`Serwer działa na portcie ${PORT}`));
