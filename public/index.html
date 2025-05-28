@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admina - Klucze</title>
+    <title>Panel Kluczy</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +17,7 @@
             margin: 0;
             padding-bottom: 80px;
         }
-        #loginForm, #adminPanel {
+        #loginForm, #adminPanel, #userPanel {
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -137,6 +137,19 @@
     <table id="historyTable"></table>
 </div>
 
+<div id="userPanel" class="hidden">
+    <div class="form-section">
+        <h3>Pobierz klucz</h3>
+        <input id="userAssignKeyId" placeholder="ID klucza" />
+        <button onclick="userAssignKey()">Pobierz</button>
+    </div>
+    <div class="form-section">
+        <h3>Zwróć klucz</h3>
+        <input id="userReturnKeyId" placeholder="ID klucza" />
+        <button onclick="userReturnKey()">Zwróć</button>
+    </div>
+</div>
+
 <div class="sticky-logout hidden" id="logoutContainer">
     <button onclick="logout()" style="background-color: #dc3545;">Wyloguj się</button>
 </div>
@@ -147,10 +160,15 @@
     let fullHistory = [];
 
     window.addEventListener('DOMContentLoaded', () => {
-        if (username && role === 'admin') {
+        if (username && role) {
             document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('adminPanel').classList.remove('hidden');
-            fetchHistory();
+            document.getElementById('logoutContainer').classList.remove('hidden');
+            if (role === 'admin') {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                fetchHistory();
+            } else {
+                document.getElementById('userPanel').classList.remove('hidden');
+            }
         }
     });
 
@@ -165,14 +183,20 @@
         });
 
         const data = await res.json();
-        if (data.success && data.role === "admin") {
+        if (data.success) {
             username = data.username;
             role = data.role;
             localStorage.setItem('username', username);
             localStorage.setItem('role', role);
             document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('adminPanel').classList.remove('hidden');
-            fetchHistory();
+            document.getElementById('logoutContainer').classList.remove('hidden');
+
+            if (role === "admin") {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                fetchHistory();
+            } else {
+                document.getElementById('userPanel').classList.remove('hidden');
+            }
         } else {
             alert('Błąd logowania lub brak uprawnień.');
         }
@@ -185,8 +209,32 @@
         localStorage.removeItem('role');
         document.getElementById('loginForm').classList.remove('hidden');
         document.getElementById('adminPanel').classList.add('hidden');
+        document.getElementById('userPanel').classList.add('hidden');
+        document.getElementById('logoutContainer').classList.add('hidden');
         document.getElementById('login').value = '';
         document.getElementById('password').value = '';
+    }
+
+    async function userAssignKey() {
+        const keyId = document.getElementById('userAssignKeyId').value;
+        const res = await fetch('/api/keys/assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyId, username })
+        });
+        const data = await res.json();
+        alert(data.message);
+    }
+
+    async function userReturnKey() {
+        const keyId = document.getElementById('userReturnKeyId').value;
+        const res = await fetch('/api/keys/return', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyId, username })
+        });
+        const data = await res.json();
+        alert(data.message);
     }
 
     async function fetchHistory() {
@@ -203,10 +251,10 @@
         table.innerHTML = '<tr><th>Klucz</th><th>Użytkownik</th><th>Akcja</th><th>Data</th></tr>';
         history.forEach(item => {
             table.innerHTML += `<tr>
-          <td>${item.keyName}</td>
-          <td>${item.username}</td>
-          <td>${item.action}</td>
-          <td>${new Date(item.timestamp).toLocaleString()}</td>
+            <td>${item.keyName}</td>
+            <td>${item.username}</td>
+            <td>${item.action}</td>
+            <td>${new Date(item.timestamp).toLocaleString()}</td>
         </tr>`;
         });
     }
