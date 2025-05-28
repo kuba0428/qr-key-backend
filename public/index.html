@@ -12,9 +12,10 @@
             background-color: #f4f7fc;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
+            padding-bottom: 80px;
         }
         #loginForm, #adminPanel {
             background-color: #ffffff;
@@ -86,8 +87,15 @@
             margin-bottom: 15px;
             background-color: #f9f9f9;
         }
-        .hidden {
-            display: none;
+        .hidden { display: none; }
+        .sticky-logout {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 600px;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -127,8 +135,10 @@
     </div>
 
     <table id="historyTable"></table>
+</div>
 
-    <button onclick="logout()" style="margin-top: 20px; background-color: #dc3545;">Wyloguj się</button>
+<div class="sticky-logout hidden" id="logoutContainer">
+    <button onclick="logout()" style="background-color: #dc3545;">Wyloguj się</button>
 </div>
 
 <script>
