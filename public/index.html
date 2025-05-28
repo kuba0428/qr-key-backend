@@ -8,36 +8,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html, body { height: 100%; }
-
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f4f7fc;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
             margin: 0;
         }
-
         #loginForm, #adminPanel {
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             padding: 20px;
             width: 100%;
-            max-width: 450px;
+            max-width: 600px;
             margin: 10px;
         }
-
         h2, h3 {
             text-align: center;
             color: #333;
             font-weight: 600;
             margin-bottom: 15px;
         }
-
-        #loginForm input {
+        input {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
@@ -47,12 +42,8 @@
             outline: none;
             transition: all 0.3s ease;
         }
-
-        #loginForm input:focus {
-            border-color: #007bff;
-        }
-
-        #loginForm button {
+        input:focus { border-color: #007bff; }
+        button {
             width: 100%;
             padding: 12px;
             border: none;
@@ -63,84 +54,38 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
-        #loginForm button:hover {
-            background-color: #0056b3;
-        }
-
-        #adminPanel {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-            max-height: 100vh;
-        }
-
-        #adminPanel.active {
-            display: flex;
-        }
-
-        #adminContent {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        #adminFooter {
-            margin-top: auto;
-            padding-top: 10px;
-        }
-
-        #adminPanel button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            background-color: #dc3545;
-            color: white;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-
-        #adminPanel button:hover {
-            background-color: #c82333;
-        }
-
+        button:hover { background-color: #0056b3; }
         table {
             width: 100%;
             margin-top: 20px;
             border-collapse: collapse;
         }
-
         th, td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size: 14px;
         }
-
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f8f8f8;
-        }
-
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f8f8f8; }
         .filters {
             display: flex;
             justify-content: space-between;
             margin-bottom: 15px;
         }
-
         .filters input {
             width: 48%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
+        }
+        .form-section {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
         }
     </style>
     <script>
@@ -280,30 +225,35 @@
     <button onclick="login()">Zaloguj się</button>
 </div>
 
-<div id="adminPanel">
-    <div id="adminContent">
-        <h3>Zarządzanie kluczami</h3>
+<div id="adminPanel" class="hidden">
+    <div class="form-section">
+        <h3>Przypisz klucz</h3>
         <input id="keyAssign" placeholder="ID klucza" />
         <input id="userAssign" placeholder="Login użytkownika" />
-        <button onclick="assignKey()">Przypisz klucz</button>
+        <button onclick="assignKey()">Przypisz</button>
+    </div>
 
+    <div class="form-section">
+        <h3>Zwrot klucza</h3>
         <input id="keyReturn" placeholder="ID klucza do zwrotu" />
-        <button onclick="returnKey()">Zwróć klucz</button>
+        <button onclick="returnKey()">Zwróć</button>
+    </div>
 
+    <div class="form-section">
+        <h3>Dodaj nowy klucz</h3>
         <input id="newKeyId" placeholder="ID nowego klucza" />
         <input id="newKeyName" placeholder="Nazwa nowego klucza" />
-        <button onclick="addKey()">Dodaj nowy klucz</button>
+        <button onclick="addKey()">Dodaj klucz</button>
+    </div>
 
-        <h3>Historia kluczy</h3>
-        <div class="filters">
-            <input type="date" id="dateFilter" onchange="filterHistory()" />
-            <input type="text" id="userFilter" placeholder="Wprowadź użytkownika" onkeyup="filterHistory()" />
-        </div>
-        <table id="historyTable"></table>
+    <div class="filters">
+        <input type="date" id="dateFilter" onchange="filterHistory()" />
+        <input type="text" id="userFilter" placeholder="Wprowadź użytkownika" onkeyup="filterHistory()" />
     </div>
-    <div id="adminFooter">
-        <button onclick="logout()">Wyloguj się</button>
-    </div>
+
+    <table id="historyTable"></table>
+
+    <button onclick="logout()" style="margin-top: 20px; background-color: #dc3545;">Wyloguj się</button>
 </div>
 </body>
 </html>
