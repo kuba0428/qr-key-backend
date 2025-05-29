@@ -251,7 +251,7 @@
         table.innerHTML = '<tr><th>Klucz</th><th>Użytkownik</th><th>Akcja</th><th>Data</th></tr>';
         history.forEach(item => {
             table.innerHTML += `<tr>
-            <td>${item.keyName}</td>
+            <td>${item.keyId}</td>
             <td>${item.username}</td>
             <td>${item.action}</td>
             <td>${new Date(item.timestamp).toLocaleString()}</td>
