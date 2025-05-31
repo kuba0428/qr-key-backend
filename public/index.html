@@ -128,7 +128,16 @@
         <input id="newKeyName" placeholder="Nazwa nowego klucza" />
         <button onclick="addKey()">Dodaj klucz</button>
     </div>
-
+    <div class="form-section">
+        <h3>Dodaj użytkownika</h3>
+        <input id="newUserLogin" placeholder="Login nowego użytkownika" />
+        <input id="newUserPassword" placeholder="Hasło" type="password" />
+        <select id="newUserRole">
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+        </select>
+        <button onclick="addUser()">Dodaj użytkownika</button>
+    </div>
     <div class="filters">
         <input type="date" id="dateFilter" onchange="filterHistory()" />
         <input type="text" id="userFilter" placeholder="Wprowadź użytkownika" onkeyup="filterHistory()" />
@@ -315,6 +324,25 @@
         const data = await res.json();
         alert(data.message);
         await fetchHistory();
+    }
+    async function addUser() {
+        const username = document.getElementById('newUserLogin').value;
+        const password = document.getElementById('newUserPassword').value;
+        const role = document.getElementById('newUserRole').value;
+
+        if (!username || !password) {
+            alert("Wprowadź login i hasło.");
+            return;
+        }
+
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, role })
+        });
+
+        const data = await res.json();
+        alert(data.message);
     }
 </script>
 
