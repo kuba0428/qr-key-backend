@@ -32,7 +32,7 @@
             font-weight: 600;
             margin-bottom: 15px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
@@ -42,15 +42,25 @@
             outline: none;
             transition: all 0.3s ease;
         }
+        input:focus, select:focus { border-color: #007bff; }
+
         select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: #fff;
             appearance: none;
-            background-color: white;
-            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%204%205'%3E%3Cpath%20fill='none'%20stroke='gray'%20d='M2%200L0%202h4z'/%3E%3C/svg%3E");
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5' viewBox='0 0 10 5'%3E%3Cpath fill='%23333' d='M0 0l5 5 5-5z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 8px 10px;
-            padding-right: 30px;
+            background-position: right 12px center;
+            background-size: 10px 5px;
         }
+
 
         input:focus { border-color: #007bff; }
         button {
