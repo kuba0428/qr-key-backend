@@ -346,8 +346,8 @@
         await fetchHistory();
     }
     async function addUser() {
-        const username = document.getElementById('newUserLogin').value;
-        const password = document.getElementById('newUserPassword').value;
+        const username = document.getElementById('newUserLogin').value.trim();
+        const password = document.getElementById('newUserPassword').value.trim();
         const role = document.getElementById('newUserRole').value;
 
         if (!username || !password) {
@@ -355,15 +355,21 @@
             return;
         }
 
-        const res = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, role })
-        });
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            });
 
-        const data = await res.json();
-        alert(data.message);
+            const data = await res.json();
+            alert(data.message);
+        } catch (error) {
+            alert("Wystąpił błąd przy dodawaniu użytkownika.");
+            console.error(error);
+        }
     }
+
 </script>
 
 </body>
