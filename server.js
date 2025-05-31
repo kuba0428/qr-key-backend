@@ -26,28 +26,44 @@ db.connect(err => {
     }
 });
 
-app.post("/api/register", async (req, res) => {
-    const { username, password, role = "user" } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({ success: false, message: "Wprowadź nazwę użytkownika i hasło!" });
-    }
-
-    const checkUserQuery = "SELECT * FROM users WHERE username = ?";
-    db.query(checkUserQuery, [username], async (err, results) => {
-        if (err) return res.status(500).json({ success: false, message: "Błąd serwera" });
-        if (results.length > 0) return res.json({ success: false, message: "Użytkownik już istnieje!" });
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const insertUserQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-        db.query(insertUserQuery, [username, hashedPassword, role], (err) => {
-            if (err) return res.status(500).json({ success: false, message: "Błąd rejestracji użytkownika" });
-            res.json({ success: true, message: "Użytkownik zarejestrowany!" });
-        });
-    });
+app.get("/api", (req, res) => {
+    res.send("API działa!");
 });
 
+// --- Dodawanie nowego użytkownika ---
+app.post("/api/users/add", async (req, res) => {
+    const { username, password, role = "user" } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: "Podaj nazwę użytkownika i hasło!" });
+    }
+
+    try {
+        const checkUserQuery = "SELECT * FROM users WHERE username = ?";
+        db.query(checkUserQuery, [username], async (err, results) => {
+            if (err) return res.status(500).json({ success: false, message: "Błąd zapytania." });
+
+            if (results.length > 0) {
+                return res.status(400).json({ success: false, message: "Użytkownik już istnieje!" });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const insertUserQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+            db.query(insertUserQuery, [username, hashedPassword, role], (err) => {
+                if (err) return res.status(500).json({ success: false, message: "Błąd dodawania użytkownika." });
+                res.json({ success: true, message: "Użytkownik został dodany!" });
+            });
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Wewnętrzny błąd serwera." });
+    }
+});
+
+// --- Logowanie użytkownika ---
 app.post("/api/login", (req, res) => {
     const { username, password } = req.body;
+
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Podaj nazwę użytkownika i hasło!" });
     }
@@ -55,16 +71,22 @@ app.post("/api/login", (req, res) => {
     const checkUserQuery = "SELECT * FROM users WHERE username = ?";
     db.query(checkUserQuery, [username], async (err, results) => {
         if (err) return res.status(500).json({ success: false, message: "Błąd serwera" });
-        if (results.length === 0) return res.json({ success: false, message: "Nieprawidłowe dane logowania!" });
+
+        if (results.length === 0) {
+            return res.json({ success: false, message: "Nieprawidłowe dane logowania!" });
+        }
 
         const user = results[0];
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) return res.json({ success: false, message: "Nieprawidłowe hasło!" });
+        if (!isPasswordValid) {
+            return res.json({ success: false, message: "Nieprawidłowe hasło!" });
+        }
 
         res.json({ success: true, userId: user.id, username: user.username, role: user.role });
     });
 });
 
+// --- Przypisywanie klucza ---
 app.post("/api/keys/assign", (req, res) => {
     const { keyId, username } = req.body;
     if (!keyId || !username) {
@@ -97,12 +119,14 @@ app.post("/api/keys/assign", (req, res) => {
                 db.query(insertHistoryQuery, [userId, keyId], (err) => {
                     if (err) console.error("Błąd zapisu historii:", err);
                 });
-                res.json({ success: true, message: "Klucz przypisany!" });
+
+                res.json({ success: true, message: `Klucz nr ${keyId} został przypisany.` });
             });
         });
     });
 });
 
+// --- Zwracanie klucza ---
 app.post("/api/keys/return", (req, res) => {
     const { keyId, username } = req.body;
     if (!keyId || !username) {
@@ -138,12 +162,13 @@ app.post("/api/keys/return", (req, res) => {
                     if (err) console.error("Błąd zapisu historii:", err);
                 });
 
-                res.json({ success: true, message: "Klucz zwrócony!" });
+                res.json({ success: true, message: `Klucz nr ${keyId} został zwrócony.` });
             });
         });
     });
 });
 
+// --- Dodawanie klucza ---
 app.post("/api/keys/add", (req, res) => {
     const { keyId, keyName } = req.body;
 
@@ -166,12 +191,13 @@ app.post("/api/keys/add", (req, res) => {
     });
 });
 
+// --- Historia ---
 app.get("/api/keys/history", (req, res) => {
     const historyQuery = `
         SELECT h.id, k.keyId, k.keyName, u.username, h.action, h.timestamp
         FROM keys_history h
-                 JOIN users u ON h.userId = u.id
-                 JOIN keys_door k ON h.keyId = k.keyId
+        JOIN users u ON h.userId = u.id
+        JOIN keys_door k ON h.keyId = k.keyId
         ORDER BY h.timestamp DESC`;
 
     db.query(historyQuery, (err, historyResults) => {
@@ -180,9 +206,6 @@ app.get("/api/keys/history", (req, res) => {
     });
 });
 
+// --- Start serwera ---
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', () => console.log(`Serwer działa na portcie ${PORT}`));
-
-app.get("/api", (req, res) => {
-    res.send("API działa!");
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Serwer działa na porcie ${PORT}`));
