@@ -196,13 +196,39 @@ app.get("/api/keys/history", (req, res) => {
     const historyQuery = `
         SELECT h.id, k.keyId, k.keyName, u.username, h.action, h.timestamp
         FROM keys_history h
-        JOIN users u ON h.userId = u.id
-        JOIN keys_door k ON h.keyId = k.keyId
+                 JOIN users u ON h.userId = u.id
+                 JOIN keys_door k ON h.keyId = k.keyId
         ORDER BY h.timestamp DESC`;
 
     db.query(historyQuery, (err, historyResults) => {
         if (err) return res.status(500).json({ success: false, message: "Błąd pobierania historii" });
         res.json({ success: true, history: historyResults });
+    });
+});
+
+// --- Przypisane klucze użytkownika ---
+app.get("/api/users/:username/assigned-keys", (req, res) => {
+    const username = req.params.username;
+
+    const sql = `
+        SELECT h.keyId
+        FROM keys_history h
+        JOIN users u ON h.userId = u.id
+        WHERE u.username = ? AND h.action = 'Pobrano'
+        AND NOT EXISTS (
+            SELECT 1 FROM keys_history r
+            WHERE r.keyId = h.keyId AND r.action = 'Oddano' AND r.timestamp > h.timestamp
+        )
+    `;
+
+    db.query(sql, [username], (err, results) => {
+        if (err) {
+            console.error("Błąd SQL:", err);
+            return res.status(500).json({ success: false, message: "Błąd serwera." });
+        }
+
+        const keys = results.map(row => row.keyId);
+        res.json({ success: true, keys });
     });
 });
 
