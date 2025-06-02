@@ -1,3 +1,5 @@
+Html 1.06
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -153,8 +155,8 @@
         <input id="newUserLogin" placeholder="Login nowego użytkownika" />
         <input id="newUserPassword" placeholder="Hasło" type="password" />
         <select id="newUserRole">
-            <option value="uzytkownik">Użytkownik</option>
-            <option value="administrator">Administrator</option>
+            <option value="user">Użytkownik</option>
+            <option value="admin">Administrator</option>
         </select>
 
         <button onclick="addUser()">Dodaj użytkownika</button>
@@ -193,7 +195,7 @@
         if (username && role) {
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutContainer').classList.remove('hidden');
-            if (role === 'administrator') {
+            if (role === 'admin') {
                 document.getElementById('adminPanel').classList.remove('hidden');
                 fetchHistory();
             } else {
@@ -221,7 +223,7 @@
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutContainer').classList.remove('hidden');
 
-            if (role === "administrator") {
+            if (role === "admin") {
                 document.getElementById('adminPanel').classList.remove('hidden');
                 fetchHistory();
             } else {
@@ -371,3 +373,4 @@
 
 </body>
 </html>
+
