@@ -32,7 +32,7 @@ app.get("/api", (req, res) => {
 
 // --- Dodawanie nowego użytkownika ---
 app.post("/api/users/add", async (req, res) => {
-    const { username, password, role = "user" } = req.body;
+    const { username, password, role = "uzytkownik" } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ success: false, message: "Podaj nazwę użytkownika i hasło!" });
@@ -51,7 +51,9 @@ app.post("/api/users/add", async (req, res) => {
 
             const insertUserQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
             db.query(insertUserQuery, [username, hashedPassword, role], (err) => {
-                if (err) return res.status(500).json({ success: false, message: "Błąd dodawania użytkownika." });
+                if (err) {
+                    return res.status(500).json({ success: false, message: "Błąd dodawania użytkownika." });
+                }
                 res.json({ success: true, message: "Użytkownik został dodany!" });
             });
         });
@@ -59,6 +61,7 @@ app.post("/api/users/add", async (req, res) => {
         res.status(500).json({ success: false, message: "Wewnętrzny błąd serwera." });
     }
 });
+
 
 // --- Logowanie użytkownika ---
 app.post("/api/login", (req, res) => {
@@ -82,9 +85,16 @@ app.post("/api/login", (req, res) => {
             return res.json({ success: false, message: "Nieprawidłowe hasło!" });
         }
 
-        res.json({ success: true, userId: user.id, username: user.username, role: user.role });
+        // Zakładamy, że role to już "administrator" albo "uzytkownik"
+        res.json({
+            success: true,
+            userId: user.id,
+            username: user.username,
+            role: user.role
+        });
     });
 });
+
 
 // --- Przypisywanie klucza ---
 app.post("/api/keys/assign", (req, res) => {
